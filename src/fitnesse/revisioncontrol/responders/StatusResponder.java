@@ -2,6 +2,7 @@ package fitnesse.revisioncontrol.responders;
 
 import fitnesse.html.HtmlTableListingBuilder;
 import fitnesse.html.HtmlTag;
+import fitnesse.http.Request;
 import static fitnesse.revisioncontrol.RevisionControlOperation.STATUS;
 import fitnesse.revisioncontrol.StatusResults;
 import fitnesse.revisioncontrol.wiki.RevisionControlledFileSystemPage;
@@ -12,8 +13,8 @@ public class StatusResponder extends RevisionControlResponder {
   }
 
   @Override
-  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag) {
-    StatusResults results = page.execute(STATUS);
+  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag, Request request) {
+    StatusResults results = page.execute(STATUS,request);
     makeResultsHtml(results, tag);
   }
 

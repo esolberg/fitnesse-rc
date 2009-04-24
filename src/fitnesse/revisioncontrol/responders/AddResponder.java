@@ -2,6 +2,7 @@ package fitnesse.revisioncontrol.responders;
 
 import fitnesse.html.HtmlTableListingBuilder;
 import fitnesse.html.HtmlTag;
+import fitnesse.http.Request;
 import fitnesse.revisioncontrol.OperationStatus;
 import fitnesse.revisioncontrol.Results;
 import fitnesse.revisioncontrol.RevisionControlException;
@@ -31,12 +32,12 @@ public class AddResponder extends RevisionControlResponder {
     if (parentState == null || !parentState.isUnderRevisionControl())
       throw new RevisionControlException("A page is being added, but its parent is not under revision control");
     else
-      verifyParentIsUnderVersionControl(parentPage);
+      return;//EJS - Removing this as it seems to be a bug: verifyParentIsUnderVersionControl(parent);
   }
 
   @Override
-  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag) {
-    Results results = page.execute(ADD);
+  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag, Request request) {
+    Results results = page.execute(ADD,request);
     makeResultsHtml(results, tag);
   }
 

@@ -57,30 +57,14 @@ public class RevisionsResponder extends BasicResponder {
     final State state = ((RevisionControllable) wikiPage).getState();
     final RevisionControlOperation[] operations = state.operations();
     for (final RevisionControlOperation operation : operations)
-      group.add(makeHtmlForOperation(operation));
+      group.add(operation.makeHtml(resource));
 
     return group;
   }
 
-  public TagGroup makeHtmlForOperation(RevisionControlOperation operation) {
-    TagGroup group = makeContent(operation.getName(), operation.getDescription());
-    group.add(makeForm(operation.getQuery(), operation.getName()));
-    group.add(HtmlUtil.HR);
-    return group;
-  }
 
-  private HtmlTag makeForm(String responderName, String buttonCaption) {
-    HtmlTag form = HtmlUtil.makeFormTag("post", resource);
-    form.add(HtmlUtil.makeInputTag("hidden", "responder", responderName));
-    form.add(HtmlUtil.makeInputTag("submit", "", buttonCaption));
-    return form;
-  }
 
-  private HtmlTag makeCheckinContent() throws Exception {
-    TagGroup group = makeContent("Commit:", "Commit this sub-wiki to version control.");
-    group.add(makeCheckinForm());
-    return group;
-  }
+
 
   private HtmlTag makeCheckinForm() throws Exception {
     HtmlTag form = HtmlUtil.makeFormTag("post", resource);
@@ -95,12 +79,6 @@ public class RevisionsResponder extends BasicResponder {
     return form;
   }
 
-  private TagGroup makeContent(String header, String description) {
-    TagGroup group = new TagGroup();
-    group.add(new HtmlTag("h3", header));
-    group.add(description);
-    return group;
-  }
 
   private HtmlTag makeTable() {
     HtmlTag table = new HtmlTag("table");

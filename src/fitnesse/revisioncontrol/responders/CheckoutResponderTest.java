@@ -37,7 +37,7 @@ public class CheckoutResponderTest extends RevisionControlTestCase {
 
   public void testShouldReportErrorMsgIfCheckoutOperationFails() throws Exception {
     final String errorMsg = "Cannot checkout files to Revision Control";
-    revisionController.checkout(filePathFor(FS_PARENT_PAGE));
+    revisionController.checkout(filePathFor(FS_PARENT_PAGE),null);
     expectLastCall().andThrow(new RevisionControlException(errorMsg));
     replay(revisionController);
 
@@ -50,6 +50,6 @@ public class CheckoutResponderTest extends RevisionControlTestCase {
   }
 
   private void expectCheckoutForPage(String page) throws Exception {
-    expect(revisionController.checkout(filePathFor(page))).andReturn(new Results());
+    expect(revisionController.checkout(filePathFor(page),null)).andReturn(new Results());
   }
 }

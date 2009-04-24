@@ -46,7 +46,7 @@ public abstract class RevisionControlResponder extends BasicResponder {
       response.setContent(makeHtml(resource, context, invalidWikiPageContent(resource)));
       return response;
     }
-    String returnMsg = executeRevisionControlOperation((RevisionControlledFileSystemPage) page);
+    String returnMsg = executeRevisionControlOperation((RevisionControlledFileSystemPage) page,request);
     response.setContent(makeHtml(resource, context, content(resource, returnMsg)));
 
     return response;
@@ -58,14 +58,14 @@ public abstract class RevisionControlResponder extends BasicResponder {
     return page;
   }
 
-  protected String executeRevisionControlOperation(RevisionControlledFileSystemPage page) {
+  protected String executeRevisionControlOperation(RevisionControlledFileSystemPage page,Request request) {
     String returnMsg;
     try {
       beforeOperation(page);
 
       TagGroup group = new TagGroup();
 
-      performOperation(page, group);
+      performOperation(page, group, request);
 
       if (group.childTags.size() == 0)
         returnMsg = operation.getName() + " was successful.";
@@ -89,7 +89,7 @@ public abstract class RevisionControlResponder extends BasicResponder {
   protected void beforeOperation(FileSystemPage page) {
   }
 
-  protected abstract void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag);
+  protected abstract void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag, Request request);
 
   protected String createPageLink(String resource) throws Exception {
     return "View the " + HtmlUtil.makeLink(resource, "page").html() + ".";

@@ -1,6 +1,7 @@
 package fitnesse.revisioncontrol.responders;
 
 import fitnesse.html.HtmlTag;
+import fitnesse.http.Request;
 import static fitnesse.revisioncontrol.RevisionControlOperation.SYNC;
 import fitnesse.revisioncontrol.wiki.RevisionControlledFileSystemPage;
 
@@ -10,7 +11,7 @@ public class SyncResponder extends RevisionControlResponder {
   }
 
   @Override
-  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag) {
-    page.execute(SYNC);
+  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag, Request request) {
+    page.execute(SYNC,request);
   }
 }

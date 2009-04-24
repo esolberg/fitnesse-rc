@@ -1,10 +1,17 @@
 package fitnesse.revisioncontrol.svn;
 
+import fitnesse.html.HtmlElement;
+import fitnesse.html.HtmlTableListingBuilder;
+import fitnesse.html.HtmlTag;
 import fitnesse.revisioncontrol.*;
+import fitnesse.revisioncontrol.responders.RevisionControlDetailsTableBuilder;
 import fitnesse.revisioncontrol.svn.client.SVNClient;
+import fitnesse.revisioncontrol.svn.SVNState;
 
 import java.io.File;
 import java.util.Properties;
+
+import org.tmatesoft.svn.core.SVNDepth;
 
 public class SVNRevisionController implements RevisionController {
   private final SVNClient client;
@@ -35,6 +42,19 @@ public class SVNRevisionController implements RevisionController {
       throw revisionControlException("add", pagePath, e);
     }
   }
+  
+  public Results browse(final String pagePath, final String url){
+	  try{
+		  Results results = new SVNListResults();
+		  client.doTree(pagePath,url,results);
+		  
+		  
+	  return results;
+	  }catch(Exception e){
+		  throw revisionControlException("browse",url,e);
+	  }
+	  
+  }
 
   public NewRevisionResults checkin(final String pagePath) {
     try {
@@ -43,13 +63,24 @@ public class SVNRevisionController implements RevisionController {
       debug("checkin", file);
       client.doCommit(file, "Auto Commit", results);
       return results;
-    } catch (Exception e) {
+    }
+    catch (Exception e) {
       throw revisionControlException("checkin", pagePath, e);
     }
   }
 
-  public Results checkout(final String pagePath) {
-    throw new RevisionControlException("This operation is currently not supported");
+  public Results checkout(final String pagePath, final String[] args) {
+    try{
+    	File file = getFileFromPath(pagePath);
+    	NewRevisionResults results  = new SVNNewRevisionResults();
+    	debug("checkout", file);
+    	client.doCheckOut(file,args[1] , results);
+    	client.doRevert(file, results);
+    	return results;
+    }
+    catch(Exception e){
+    	throw revisionControlException("checkout",pagePath,e);
+    }
   }
 
   public Results delete(final String pagePath) {
@@ -70,7 +101,7 @@ public class SVNRevisionController implements RevisionController {
       Results results = new SVNResults();
       debug("revert", file);
       client.doRevert(file, results);
-      client.doUnlock(file);
+      //client.doUnlock(file);
       return results;
     } catch (Exception e) {
       throw revisionControlException("revert", pagePath, e);
@@ -118,7 +149,7 @@ public class SVNRevisionController implements RevisionController {
       final File file = getFileFromPath(pagePath);
       StatusResults results = new SVNStatusResults();
       debug("status", file);
-      client.doStatus(file, results);
+      client.doStatus(file, SVNDepth.INFINITY, results);
       return results;
     } catch (Exception e) {
       throw revisionControlException("status", pagePath, e);
@@ -144,6 +175,9 @@ public class SVNRevisionController implements RevisionController {
 
   public State getState(final String pagePath) {
     File file = getFileFromPath(pagePath);
+    if(!file.exists()){
+    	return SVNState.UNKNOWN;
+    }
     debug("get state for", file);
     return client.getState(file);
   }
@@ -161,6 +195,36 @@ public class SVNRevisionController implements RevisionController {
     return getState(file.getAbsolutePath()).isUnderRevisionControl();
   }
 
+  public String getRepositoryAddress(String pagePath){
+	  try {
+	      final File file = getFileFromPath(pagePath);
+	      debug("getRepositoryAddress", file);
+	      return client.getUrl(file);
+	    } catch (Exception e) {
+	      throw revisionControlException("getRepositoryLocation", pagePath, e);
+	    }
+  }
+  
+  public String getVersion(String pagePath){
+	  try {
+	      final File file = getFileFromPath(pagePath);
+	      debug("getVersion", file);
+	      return client.getVersion(file);
+	    } catch (Exception e) {
+	      throw revisionControlException("getVersion", pagePath, e);
+	    }
+  }
+  
+  public void cleanup(String pagePath){
+	  try{
+		  final File file = getFileFromPath(pagePath);
+		  debug("cleanup",file);
+		  client.cleanup(file);
+	  }catch (Exception e){
+		  throw revisionControlException("cleanup",pagePath,e);
+	  }
+  }
+  
   class SVNResults extends Results {
     SVNResults() {
       setDetailLabels("Name", "Actions");
@@ -175,8 +239,15 @@ public class SVNRevisionController implements RevisionController {
 
   class SVNStatusResults extends StatusResults {
     SVNStatusResults() {
-      setDetailLabels("Name", "File", "Props", "RemoteFile", "RemoteProps",
+      setDetailLabels("Name","Url","File", "Props", "RemoteFile", "RemoteProps",
       "LockStatus", "WCRev", "LastRev", "RemoteRev", "Author");
     }
   }
+  
+  class SVNListResults extends Results{
+	  SVNListResults(){
+		  setDetailLabels("Path","Url");
+	  }
+  }
+  
 }

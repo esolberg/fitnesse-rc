@@ -25,41 +25,41 @@ public class RevisionControlOperationTest {
   public void addShouldDelegateCallToRevisionController() throws Exception {
     expect(revisionController.add(filePath)).andReturn(new Results());
     replay(revisionController);
-    ADD.execute(revisionController, filePath);
+    ADD.execute(revisionController, filePath,null);
   }
 
   @Test
   public void checkinShouldDelegateCallToRevisionController() throws Exception {
     expect(revisionController.checkin(filePath)).andReturn(new NewRevisionResults());
     replay(revisionController);
-    CHECKIN.execute(revisionController, filePath);
+    CHECKIN.execute(revisionController, filePath,null);
   }
 
   @Test
   public void checkoutShouldDelegateCallToRevisionController() throws Exception {
-    expect(revisionController.checkout(filePath)).andReturn(new Results());
+    expect(revisionController.checkout(filePath,null)).andReturn(new Results());
     replay(revisionController);
-    CHECKOUT.execute(revisionController, filePath);
+    CHECKOUT.execute(revisionController, filePath, null);
   }
 
   @Test
   public void revertShouldDelegateCallToRevisionController() throws Exception {
     expect(revisionController.revert(filePath)).andReturn(new Results());
     replay(revisionController);
-    REVERT.execute(revisionController, filePath);
+    REVERT.execute(revisionController, filePath, null);
   }
 
   @Test
   public void updateShouldDelegateCallToRevisionController() throws Exception {
     expect(revisionController.update(filePath)).andReturn(new NewRevisionResults());
     replay(revisionController);
-    UPDATE.execute(revisionController, filePath);
+    UPDATE.execute(revisionController, filePath,null);
   }
 
   @Test
   public void syncShouldDelegateCallToRevisionController() throws Exception {
     expect(revisionController.getState(filePath)).andReturn(VERSIONED);
     replay(revisionController);
-    SYNC.execute(revisionController, filePath);
+    SYNC.execute(revisionController, filePath,null);
   }
 }

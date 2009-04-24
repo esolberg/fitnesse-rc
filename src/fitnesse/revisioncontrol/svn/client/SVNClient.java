@@ -1,5 +1,7 @@
 package fitnesse.revisioncontrol.svn.client;
 
+import fitnesse.html.HtmlElement;
+import fitnesse.html.HtmlTag;
 import fitnesse.revisioncontrol.*;
 import fitnesse.revisioncontrol.svn.SVNState;
 import org.tmatesoft.svn.core.*;
@@ -7,6 +9,7 @@ import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.wc.*;
+import org.tmatesoft.svn.core.wc.admin.SVNLookClient;
 
 import java.io.File;
 import java.util.*;
@@ -41,7 +44,39 @@ public class SVNClient {
       return SVNClientManager.newInstance(null, userName, password);
     }
   }
+  
+  
+  class ListResults{
+	  private List<SVNDirEntry> data = new ArrayList<SVNDirEntry>();
+	  public ListResults(){}
+	  public void add(SVNDirEntry dir){data.add(dir);}
+  }
+  
+  class DirHandler implements ISVNDirEntryHandler{
+	  private Results results;
+	  private String basePath;
+	  public DirHandler(String basePath, Results results){this.results = results; this.basePath=basePath;}
 
+	public void handleDirEntry(SVNDirEntry dirEntry) throws SVNException {
+		if(dirEntry.getKind().equals(SVNNodeKind.DIR)){
+			String relativePath = dirEntry.getRelativePath();
+			
+			HtmlTag hyperLink = (new HtmlTag("a",relativePath.equals("")?".":relativePath));
+			hyperLink.addAttribute("href",basePath+"?responder=checkout&amp;button=Browse&amp;repositoryAddress="+dirEntry.getURL().toString());
+			HtmlTag checkoutButton = new HtmlTag("a","CheckOut");
+			checkoutButton.addAttribute("href", basePath+"?responder=checkout&amp;repositoryAddress="+dirEntry.getURL().toString());
+			results.addDetail(new RevisionControlDetail(dirEntry.getRelativePath(),hyperLink,checkoutButton));
+		}
+	}
+  }
+  
+  public void doTree(String path,String url,Results results) throws SVNException{
+	  SVNLogClient  client = clientManager.getLogClient();
+	  SVNURL svnUrl = SVNURL.parseURIEncoded(url);
+	  client.doList(svnUrl,SVNRevision.HEAD,SVNRevision.HEAD,false,false,new DirHandler(path,results));
+	  
+  }
+  
   public void doUpdate(File wcPath, NewRevisionResults results) throws SVNException {
     SVNUpdateClient client = clientManager.getUpdateClient();
     client.setIgnoreExternals(true);
@@ -53,6 +88,17 @@ public class SVNClient {
     clearEventHandler(client);
   }
 
+  public void doCheckOut(File wcPath,String url,NewRevisionResults results) throws SVNException{
+	  SVNUpdateClient client = clientManager.getUpdateClient();
+	  client.setIgnoreExternals(true);
+	  setEventHandler(results,client);
+	  SVNURL svnUrl = SVNURL.parseURIEncoded(url);
+	  long revision = client.doCheckout(svnUrl,wcPath,SVNRevision.HEAD,SVNRevision.HEAD,SVNDepth.INFINITY,true);
+	  results.setNewRevision(revision);
+	  
+	  clearEventHandler(client);
+  }
+  
   public void doCommit(File wcPath, String commitMessage, NewRevisionResults results) throws SVNException {
     SVNCommitClient client = clientManager.getCommitClient();
     setEventHandler(results, client);
@@ -82,7 +128,7 @@ public class SVNClient {
     SVNWCClient client = clientManager.getWCClient();
     setEventHandler(results, client);
 
-    client.doDelete(wcPath, force, false);
+    client.doDelete(wcPath, force,false, false);
 
     clearEventHandler(client);
   }
@@ -98,6 +144,7 @@ public class SVNClient {
   }
 
   public void doRevert(File wcPath, Results results) throws SVNException {
+	
     SVNWCClient client = clientManager.getWCClient();
     setEventHandler(results, client);
 
@@ -109,13 +156,29 @@ public class SVNClient {
       results.setStatus(OperationStatus.NOTHING_TO_DO);
   }
 
-  public void doStatus(File wcPath, StatusResults results) throws SVNException {
+  public void doStatus(File wcPath, SVNDepth depth, StatusResults results) throws SVNException {
     SVNStatusClient client = clientManager.getStatusClient();
     SVNStatusResultsHandler handler = new SVNStatusResultsHandler(results);
-    client.doStatus(wcPath, SVNRevision.HEAD, SVNDepth.INFINITY,
+    client.doStatus(wcPath, SVNRevision.HEAD, depth,
       true, true, false, false, handler, null);
   }
-
+  
+  public String getUrl(File wcPath) throws SVNException{
+	SVNStatusClient client = clientManager.getStatusClient();
+	SVNStatus status = client.doStatus(wcPath,true);
+	return status.getURL().toDecodedString();
+	
+  } 
+  public String getVersion(File wcPath) throws SVNException{
+		SVNStatusClient client = clientManager.getStatusClient();
+		SVNStatus status = client.doStatus(wcPath,true);
+		return ""+status.getRevision().getNumber();
+		
+	  }
+  public void cleanup(File wcPath) throws SVNException{
+	  SVNWCClient client = clientManager.getWCClient();
+	  client.doCleanup(wcPath);
+  }
   private SVNStatus doLocalStatus(File wcPath) throws SVNException {
     return clientManager.getStatusClient().doStatus(wcPath, false);
   }
@@ -181,18 +244,26 @@ public class SVNClient {
   }
 
   public State getState(File pagePath) {
-    SVNStatusType status;
+    SVNStatusType localStatus;
+    SVNStatusType remoteStatus;
     try {
-      status = doLocalStatus(pagePath).getContentsStatus();
+      SVNStatus status = doLocalStatus(pagePath);
+      localStatus = status.getContentsStatus();
+      remoteStatus = status.getRemoteContentsStatus();
     } catch (SVNException e) {
       return SVNState.UNKNOWN;
     }
 
-    State state = this.states.get(status);
-    if (state != null) {
-      return state;
+    State localState = this.states.get(localStatus);
+    State remoteState = this.states.get(remoteStatus);
+    if(remoteState == SVNState.MODIFIED){
+    	localState = SVNState.OUTDATED;
     }
-    throwExceptionForUnhandledStatuses(status, pagePath);
+    
+    if (localState != null) {
+      return localState;
+    }
+    throwExceptionForUnhandledStatuses(localStatus, pagePath);
     throw new RevisionControlException(pagePath + " is in an unknown state. Please update the file and try again.");
   }
 
@@ -219,9 +290,10 @@ public class SVNClient {
     this.states.put(SVNStatusType.STATUS_ADDED, SVNState.ADDED);
     this.states.put(SVNStatusType.STATUS_DELETED, SVNState.DELETED);
     this.states.put(SVNStatusType.STATUS_NORMAL, SVNState.VERSIONED);
-    this.states.put(SVNStatusType.STATUS_MODIFIED, SVNState.VERSIONED);
+    this.states.put(SVNStatusType.STATUS_MODIFIED, SVNState.MODIFIED);
     this.states.put(SVNStatusType.STATUS_REPLACED, SVNState.VERSIONED);
     this.states.put(SVNStatusType.MERGED, SVNState.VERSIONED);
+    this.states.put(SVNStatusType.STATUS_INCOMPLETE, SVNState.INCOMPLETE);
   }
 
   private void initializeUnhandledSVNStatusTypeToErrorMsgsMap() {

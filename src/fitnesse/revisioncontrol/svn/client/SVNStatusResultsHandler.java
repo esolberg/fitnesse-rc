@@ -23,7 +23,7 @@ public class SVNStatusResultsHandler implements ISVNStatusHandler {
 
     HtmlTag remoteFileLabel = SVNStatusEventTags.getTag(status.getRemoteContentsStatus());
     HtmlTag remotePropertiesLabel = SVNStatusEventTags.getTag(status.getRemotePropertiesStatus());
-
+    
     HtmlTag lockLabel = getLockLabel(status);
 
     // Obtains the working revision number of the item
@@ -38,7 +38,7 @@ public class SVNStatusResultsHandler implements ISVNStatusHandler {
 
     HtmlElement authorLabel = RevisionControlHtmlUtils.makeTextTag((status.getAuthor() != null ? status.getAuthor() : "?"));
 
-    results.addDetail(new RevisionControlDetail(status.getFile().getAbsolutePath(),
+    results.addDetail(new RevisionControlDetail(status.getFile().getAbsolutePath(),getUrl(status),
       localFileLabel, localPropertiesLabel, remoteFileLabel, remotePropertiesLabel,
       lockLabel, workingRevisionLabel, lastRevisionLabel, remoteRevisionLabel, authorLabel));
 
@@ -58,6 +58,11 @@ public class SVNStatusResultsHandler implements ISVNStatusHandler {
       return getRevisionLabel(status.getRemoteRevision().getNumber());
     else
       return RevisionControlHtmlUtils.makeTextTag("", "");
+  }
+  
+  private HtmlElement getUrl(SVNStatus status){
+	  HtmlTag urlLabel = RevisionControlHtmlUtils.makeTextTag(status.getURL().toDecodedString());
+	  return urlLabel;
   }
 
   private HtmlTag getLockLabel(SVNStatus status) {

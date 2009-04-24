@@ -2,6 +2,7 @@ package fitnesse.revisioncontrol.responders;
 
 import fitnesse.html.HtmlTableListingBuilder;
 import fitnesse.html.HtmlTag;
+import fitnesse.http.Request;
 import fitnesse.revisioncontrol.OperationStatus;
 import fitnesse.revisioncontrol.Results;
 import static fitnesse.revisioncontrol.RevisionControlOperation.REVERT;
@@ -13,8 +14,8 @@ public class RevertResponder extends RevisionControlResponder {
   }
 
   @Override
-  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag) {
-    Results results = page.execute(REVERT);
+  protected void performOperation(RevisionControlledFileSystemPage page, HtmlTag tag, Request request) {
+    Results results = page.execute(REVERT,request);
     makeResultsHtml(results, tag);
   }
 

@@ -30,6 +30,10 @@ public class SVNResultsHandler implements ISVNEventHandler {
     if (isCompletedAction(action)) {
       return;
     }
+    if(action == SVNEventAction.COMMIT_DELETED){
+    	//file was deleted need to take it out of cache?
+    	
+    }
 
     String path = event.getFile().getAbsolutePath();
     HtmlTag actionName = SVNEventActionTags.getTag(action);

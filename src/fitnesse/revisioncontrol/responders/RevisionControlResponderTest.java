@@ -2,6 +2,7 @@ package fitnesse.revisioncontrol.responders;
 
 import fitnesse.FitNesseContext;
 import fitnesse.html.HtmlTag;
+import fitnesse.http.Request;
 import fitnesse.http.MockRequest;
 import fitnesse.revisioncontrol.NullState;
 import fitnesse.revisioncontrol.OperationStatus;
@@ -84,7 +85,7 @@ public class RevisionControlResponderTest extends RevisionControlTestCase {
     public TestRevisionControlResponder() {
       super(new RevisionControlOperation(RevisionControlResponderTest.this.revisionControlOperation, "", "") {
         @Override
-        public OperationStatus execute(final RevisionController revisionController, final String pagePath) {
+        public OperationStatus execute(final RevisionController revisionController, final String pagePath, Request request) {
           return OperationStatus.SUCCESS;
         }
       });
@@ -96,7 +97,7 @@ public class RevisionControlResponderTest extends RevisionControlTestCase {
     }
 
     @Override
-    protected void performOperation(final RevisionControlledFileSystemPage page, HtmlTag tag) {
+    protected void performOperation(final RevisionControlledFileSystemPage page, HtmlTag tag,Request request) {
     }
 
   }
